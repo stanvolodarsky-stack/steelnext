@@ -819,7 +819,10 @@ function parseDateStr(s){
   const d=new Date(s); return isNaN(d)?null:d;
 }
 function fetchWithTimeout(url, ms){
-  return Promise.race([fetch(url), new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),ms))]);
+  return new Promise((resolve,reject)=>{
+    const tid=setTimeout(()=>reject(new Error('timeout after '+ms+'ms')),ms);
+    fetch(url).then(r=>{clearTimeout(tid);resolve(r);}).catch(e=>{clearTimeout(tid);reject(e);});
+  });
 }
 function parseOrdersCSV(csv){
   const lines=csv.trim().split('\n');
@@ -866,7 +869,7 @@ async function loadData(){
     if(sl) sl.innerHTML='<div class="nos">&#x231B; Fetching orders...</div>';
     let oTxt='', mTxt='';
     try{
-      const r=await fetchWithTimeout('https://docs.google.com/spreadsheets/d/e/2PACX-1vR1B4GxP1rIBZZnZQEWICTx6kZYOJbUmh1FYE4LTKC9yRTNFSnaT5pM1c5zSNBk-w/pub?gid=1921631200&single=true&output=csv',10000);
+      const r=await fetchWithTimeout('https://docs.google.com/spreadsheets/d/e/2PACX-1vR1B4GxP1rIBZZnZQEWICTx6kZYOJbUmh1FYE4LTKC9yRTNFSnaT5pM1c5zSNBk-w/pub?gid=1921631200&single=true&output=csv',8000);
       if(r.ok) oTxt=await r.text();
       if(sl) sl.innerHTML='<div class="nos">&#x231B; Orders: '+(oTxt?oTxt.split('\n').length+'rows':'failed')+'</div>';
     }catch(e){if(sl) sl.innerHTML='<div class="nos" style="color:#ff8">Orders fetch failed: '+e.message+'</div>';}
@@ -874,7 +877,15 @@ async function loadData(){
       const r=await fetchWithTimeout('https://docs.google.com/spreadsheets/d/e/2PACX-1vR1B4GxP1rIBZZnZQEWICTx6kZYOJbUmh1FYE4LTKC9yRTNFSnaT5pM1c5zSNBk-w/pub?gid=2129526323&single=true&output=csv',10000);
       if(r.ok) mTxt=await r.text();
     }catch(e){console.warn('Mills fetch failed:',e.message);}
-    if(oTxt){RAW=parseOrdersCSV(oTxt); if(sl) sl.innerHTML='<div class="nos">&#x231B; Parsed '+RAW.length+' orders, new: '+RAW.filter(r=>r[11]).length+'</div>';}
+    if(oTxt){
+      try{
+        RAW=parseOrdersCSV(oTxt);
+        if(sl) sl.innerHTML='<div class="nos">&#x231B; Parsed '+RAW.length+' orders, new: '+RAW.filter(r=>r[11]).length+'</div>';
+      }catch(pe){
+        if(sl) sl.innerHTML='<div class="nos" style="color:#ff4444">Parse error: '+pe.message+'<br>'+pe.stack.slice(0,200)+'</div>';
+        console.error('parseOrdersCSV error:',pe);
+      }
+    }
     if(mTxt) MILLS_DB=parseMillsCSV(mTxt);
     console.log('Loaded:',RAW.length,'orders, new:',RAW.filter(r=>r[11]).length);
   } catch(err){

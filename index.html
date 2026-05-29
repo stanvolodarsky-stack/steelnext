@@ -871,8 +871,10 @@ async function loadData(){
     ]);
     if(oTxt) RAW=parseOrdersCSV(oTxt);
     if(mTxt) MILLS_DB=parseMillsCSV(mTxt);
-    if(cTxt){ CARGO_DB={}; /* parse cargo if needed */ }
-    console.log('Live data loaded: '+RAW.length+' orders');
+    if(cTxt){ CARGO_DB={}; }
+    console.log('Live data loaded: '+RAW.length+' orders, new: '+RAW.filter(r=>r[11]).length);
+    initApp();
+    return;
   } catch(err){
     console.warn('Live fetch failed, using cached data:', err.message);
   }

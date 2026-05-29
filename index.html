@@ -877,6 +877,16 @@ async function loadData(){
     if(mTxt) MILLS_DB=parseMillsCSV(mTxt);
     if(cTxt){ CARGO_DB={}; }
     console.log('Live data loaded: '+RAW.length+' orders, new: '+RAW.filter(r=>r[11]).length);
+    // Show debug in UI
+    const dbg=document.getElementById('sl');
+    if(dbg) dbg.innerHTML='<div class="nos">Loaded: '+RAW.length+' orders<br>New: '+RAW.filter(r=>r[11]).length+'<br>LCMIN:'+LCMIN+' LCMAX:'+LCMAX+'</div>';
+    // Check first new order
+    const firstNew=RAW.find(r=>r[11]);
+    if(firstNew) console.log('First new order:', firstNew[0], firstNew[2], '->', firstNew[6], 'ls='+firstNew[8], 'le='+firstNew[9], 'isNew='+firstNew[11]);
+    else console.log('No new orders in parsed data');
+    // Check date parsing
+    const today=new Date(); today.setHours(0,0,0,0);
+    console.log('Today:', today.toISOString(), 'serial approx:', Math.round((today-new Date(1899,11,30))/86400000));
     initApp();
     return;
   } catch(err){

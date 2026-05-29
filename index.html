@@ -861,19 +861,22 @@ let CARGO_DB={}, POD_TYPES_LIVE={};
 
 async function loadData(){
   const sl=document.getElementById('sl');
-  if(sl) sl.innerHTML='<div class="nos">&#x231B; Loading from Google Sheets...</div>';
+  if(sl) sl.innerHTML='<div class="nos">&#x231B; Step 1: starting fetch...</div>';
   try{
     const [oResp,mResp,cResp]=await Promise.all([
       fetchWithTimeout('https://docs.google.com/spreadsheets/d/e/2PACX-1vR1B4GxP1rIBZZnZQEWICTx6kZYOJbUmh1FYE4LTKC9yRTNFSnaT5pM1c5zSNBk-w/pub?gid=1921631200&single=true&output=csv',12000),
       fetchWithTimeout('https://docs.google.com/spreadsheets/d/e/2PACX-1vR1B4GxP1rIBZZnZQEWICTx6kZYOJbUmh1FYE4LTKC9yRTNFSnaT5pM1c5zSNBk-w/pub?gid=2129526323&single=true&output=csv',12000),
       fetchWithTimeout('https://docs.google.com/spreadsheets/d/e/2PACX-1vR1B4GxP1rIBZZnZQEWICTx6kZYOJbUmh1FYE4LTKC9yRTNFSnaT5pM1c5zSNBk-w/pub?gid=43079557&single=true&output=csv',12000),
     ]);
+    if(sl) sl.innerHTML='<div class="nos">&#x231B; Step 2: fetch done, o='+oResp.status+' m='+mResp.status+'</div>';
     const [oTxt,mTxt,cTxt]=await Promise.all([
       oResp.ok?oResp.text():Promise.resolve(''),
       mResp.ok?mResp.text():Promise.resolve(''),
       cResp.ok?cResp.text():Promise.resolve(''),
     ]);
+    if(sl) sl.innerHTML='<div class="nos">&#x231B; Step 3: parsing '+oTxt.length+' chars...</div>';
     if(oTxt) RAW=parseOrdersCSV(oTxt);
+    if(sl) sl.innerHTML='<div class="nos">&#x231B; Step 4: parsed '+RAW.length+' orders, new='+RAW.filter(r=>r[11]).length+'</div>';
     if(mTxt) MILLS_DB=parseMillsCSV(mTxt);
     if(cTxt){ CARGO_DB={}; }
     console.log('Live data loaded: '+RAW.length+' orders, new: '+RAW.filter(r=>r[11]).length);

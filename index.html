@@ -780,19 +780,23 @@ window.addEventListener("resize",renderMap);
 
 // Init in alerts mode
 function initApp(){
-  // Re-init slider now that RAW is loaded
-  const LCMIN_=Math.min(...RAW.map(r=>r[8]));
-  const LCMAX_=Math.max(...RAW.map(r=>r[9]));
-  const TODAY_=Math.round((new Date()-new Date(1899,11,30))/(86400000));
-  const rs=document.getElementById("rs"),re=document.getElementById("re");
-  rs.min=re.min=LCMIN_; rs.max=re.max=LCMAX_;
-  rs.value=Math.max(LCMIN_,TODAY_); re.value=LCMAX_;
-  const step=Math.ceil((LCMAX_-LCMIN_)/5),lbs=[];
-  for(let n=LCMIN_;n<=LCMAX_;n+=step) lbs.push(exd(n).toLocaleDateString("en",{month:"short",year:"2-digit"}));
-  updateSlider();
-  [vx,vy,vw,vh]=REGIONS.world;
-  syncPortSlider();
-  setMode("alerts");
+  try{
+    LCMIN=Math.min(...RAW.map(r=>r[8]));
+    LCMAX=Math.max(...RAW.map(r=>r[9]));
+    const TODAY_=Math.round((new Date()-new Date(1899,11,30))/(86400000));
+    const rs=document.getElementById("rs"),re=document.getElementById("re");
+    rs.min=re.min=LCMIN; rs.max=re.max=LCMAX;
+    rs.value=Math.max(LCMIN,TODAY_); re.value=LCMAX;
+    const step=Math.ceil((LCMAX-LCMIN)/5),lbs=[];
+    for(let n=LCMIN;n<=LCMAX;n+=step) lbs.push(exd(n).toLocaleDateString("en",{month:"short",year:"2-digit"}));
+    updateSlider();
+    [vx,vy,vw,vh]=REGIONS.world;
+    syncPortSlider();
+    setMode("alerts");
+  } catch(e){
+    console.error("initApp error:", e.message, e.stack);
+    document.getElementById("sl").innerHTML='<div class="nos" style="color:#ff4444">Error: '+e.message+'</div>';
+  }
 }
 // ── CSV UTILS ─────────────────────────────────────────────────────
 function parseCSVLine(line){

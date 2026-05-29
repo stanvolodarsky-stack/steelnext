@@ -863,37 +863,23 @@ async function loadData(){
   const sl=document.getElementById('sl');
   if(sl) sl.innerHTML='<div class="nos">&#x231B; Step 1: starting fetch...</div>';
   try{
-    const [oResp,mResp,cResp]=await Promise.all([
-      fetchWithTimeout('https://docs.google.com/spreadsheets/d/e/2PACX-1vR1B4GxP1rIBZZnZQEWICTx6kZYOJbUmh1FYE4LTKC9yRTNFSnaT5pM1c5zSNBk-w/pub?gid=1921631200&single=true&output=csv',12000),
-      fetchWithTimeout('https://docs.google.com/spreadsheets/d/e/2PACX-1vR1B4GxP1rIBZZnZQEWICTx6kZYOJbUmh1FYE4LTKC9yRTNFSnaT5pM1c5zSNBk-w/pub?gid=2129526323&single=true&output=csv',12000),
-      fetchWithTimeout('https://docs.google.com/spreadsheets/d/e/2PACX-1vR1B4GxP1rIBZZnZQEWICTx6kZYOJbUmh1FYE4LTKC9yRTNFSnaT5pM1c5zSNBk-w/pub?gid=43079557&single=true&output=csv',12000),
-    ]);
-    if(sl) sl.innerHTML='<div class="nos">&#x231B; Step 2: fetch done, o='+oResp.status+' m='+mResp.status+'</div>';
-    const [oTxt,mTxt,cTxt]=await Promise.all([
-      oResp.ok?oResp.text():Promise.resolve(''),
-      mResp.ok?mResp.text():Promise.resolve(''),
-      cResp.ok?cResp.text():Promise.resolve(''),
-    ]);
-    if(sl) sl.innerHTML='<div class="nos">&#x231B; Step 3: parsing '+oTxt.length+' chars...</div>';
-    if(oTxt) RAW=parseOrdersCSV(oTxt);
-    if(sl) sl.innerHTML='<div class="nos">&#x231B; Step 4: parsed '+RAW.length+' orders, new='+RAW.filter(r=>r[11]).length+'</div>';
+    if(sl) sl.innerHTML='<div class="nos">&#x231B; Fetching orders...</div>';
+    let oTxt='', mTxt='';
+    try{
+      const r=await fetchWithTimeout('https://docs.google.com/spreadsheets/d/e/2PACX-1vR1B4GxP1rIBZZnZQEWICTx6kZYOJbUmh1FYE4LTKC9yRTNFSnaT5pM1c5zSNBk-w/pub?gid=1921631200&single=true&output=csv',10000);
+      if(r.ok) oTxt=await r.text();
+      if(sl) sl.innerHTML='<div class="nos">&#x231B; Orders: '+(oTxt?oTxt.split('\n').length+'rows':'failed')+'</div>';
+    }catch(e){if(sl) sl.innerHTML='<div class="nos" style="color:#ff8">Orders fetch failed: '+e.message+'</div>';}
+    try{
+      const r=await fetchWithTimeout('https://docs.google.com/spreadsheets/d/e/2PACX-1vR1B4GxP1rIBZZnZQEWICTx6kZYOJbUmh1FYE4LTKC9yRTNFSnaT5pM1c5zSNBk-w/pub?gid=2129526323&single=true&output=csv',10000);
+      if(r.ok) mTxt=await r.text();
+    }catch(e){console.warn('Mills fetch failed:',e.message);}
+    if(oTxt){RAW=parseOrdersCSV(oTxt); if(sl) sl.innerHTML='<div class="nos">&#x231B; Parsed '+RAW.length+' orders, new: '+RAW.filter(r=>r[11]).length+'</div>';}
     if(mTxt) MILLS_DB=parseMillsCSV(mTxt);
-    if(cTxt){ CARGO_DB={}; }
-    console.log('Live data loaded: '+RAW.length+' orders, new: '+RAW.filter(r=>r[11]).length);
-    // Show debug in UI
-    const dbg=document.getElementById('sl');
-    if(dbg) dbg.innerHTML='<div class="nos">Loaded: '+RAW.length+' orders<br>New: '+RAW.filter(r=>r[11]).length+'<br>LCMIN:'+LCMIN+' LCMAX:'+LCMAX+'</div>';
-    // Check first new order
-    const firstNew=RAW.find(r=>r[11]);
-    if(firstNew) console.log('First new order:', firstNew[0], firstNew[2], '->', firstNew[6], 'ls='+firstNew[8], 'le='+firstNew[9], 'isNew='+firstNew[11]);
-    else console.log('No new orders in parsed data');
-    // Check date parsing
-    const today=new Date(); today.setHours(0,0,0,0);
-    console.log('Today:', today.toISOString(), 'serial approx:', Math.round((today-new Date(1899,11,30))/86400000));
-    initApp();
-    return;
+    console.log('Loaded:',RAW.length,'orders, new:',RAW.filter(r=>r[11]).length);
   } catch(err){
-    console.warn('Live fetch failed, using cached data:', err.message);
+    console.warn('Load error:', err.message);
+    if(sl) sl.innerHTML='<div class="nos" style="color:#ff4">Load error: '+err.message+'</div>';
   }
   initApp();
 }
